@@ -83,6 +83,11 @@ h1 {margin:-30px 0 15px 0;}
     {% else %}
     <td><b><a href="{{ file.url }}" target="_blank">{{ file.filename }}</a></b></td>
     {% endifequal %}
+        
+    <!-- FOLDER -->
+    {% if query.q and settings_var.SEARCH_TRAVERSE %}
+        <td><a href="{% url 'fb_browse' %}{% query_string "" "dir,p" %}&amp;dir={{ file.folder|urlencode }}"><strong>{{ file.folder }}</strong></a></td>
+    {% endif %}
 
     <!-- RENAME -->
     {% if query.pop != '4' %}
