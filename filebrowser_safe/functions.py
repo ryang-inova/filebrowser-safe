@@ -194,6 +194,9 @@ def get_settings_var():
     settings_var['MAX_UPLOAD_SIZE'] = MAX_UPLOAD_SIZE
     # Convert Filenames
     settings_var['CONVERT_FILENAME'] = CONVERT_FILENAME
+    # Traverse directories when searching
+    settings_var['SEARCH_TRAVERSE'] = SEARCH_TRAVERSE
+    
     return settings_var
 
 
