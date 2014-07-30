@@ -98,7 +98,7 @@ def browse(request):
     abs_path = os.path.join(get_directory(), path)
 
     # INITIAL VARIABLES
-    #results_var = {'results_total': 0, 'results_current': 0, 'delete_total': 0, 'images_total': 0, 'select_total': 0}
+    #filelisting = {'results_total': 0, 'results_current': 0, 'delete_total': 0, 'images_total': 0, 'select_total': 0}
     counter = {}
     for k, v in EXTENSIONS.items():
         counter[k] = 0
@@ -118,7 +118,7 @@ def browse(request):
         filter_func=filter_browse,
         sorting_by=query.get('o', DEFAULT_SORTING_BY),
         sorting_order=query.get('ot', DEFAULT_SORTING_ORDER),
-        site=self)
+        storage=default_storage)
 
     files = []
     if SEARCH_TRAVERSE and query.get("q"):

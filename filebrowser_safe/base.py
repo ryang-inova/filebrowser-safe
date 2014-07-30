@@ -44,15 +44,12 @@ class FileListing():
     _results_listing_filtered = None
     _results_walk_total = None
 
-    def __init__(self, path, filter_func=None, sorting_by=None, sorting_order=None, site=None):
+    def __init__(self, path, filter_func=None, sorting_by=None, sorting_order=None, storage=default_storage):
         self.path = path
         self.filter_func = filter_func
         self.sorting_by = sorting_by
         self.sorting_order = sorting_order
-        if not site:
-            from filebrowser.sites import site as default_site
-            site = default_site
-        self.site = site
+        self.storage = storage
 
     # HELPER METHODS
     # sort_by_attr
@@ -82,13 +79,13 @@ class FileListing():
     @property
     def is_folder(self):
         if self._is_folder_stored is None:
-            self._is_folder_stored = self.site.storage.isdir(self.path)
+            self._is_folder_stored = self.storage.isdir(self.path)
         return self._is_folder_stored
 
     def listing(self):
         "List all files for path"
         if self.is_folder:
-            dirs, files = self.site.storage.listdir(self.path)
+            dirs, files = self.storage.listdir(self.path)
             return (f for f in dirs + files)
         return []
 
@@ -100,16 +97,16 @@ class FileListing():
         Danger: Symbolic links can create cycles and this function
         ends up in a regression.
         """
-        dirs, files = self.site.storage.listdir(path)
+        dirs, files = self.storage.listdir(path)
 
         if dirs:
             for d in dirs:
                 self._walk(os.path.join(path, d), filelisting)
-                filelisting.extend([path_strip(os.path.join(path, d), self.site.directory)])
+                filelisting.extend([path_strip(os.path.join(path, d), DIRECTORY)])
 
         if files:
             for f in files:
-                filelisting.extend([path_strip(os.path.join(path, f), self.site.directory)])
+                filelisting.extend([path_strip(os.path.join(path, f), DIRECTORY)])
 
     def walk(self):
         "Walk all files for path"
@@ -126,7 +123,7 @@ class FileListing():
         if self._fileobjects_total is None:
             self._fileobjects_total = []
             for item in self.listing():
-                fileobject = FileObject(os.path.join(self.path, item), site=self.site)
+                fileobject = FileObject(os.path.join(self.path, item))
                 self._fileobjects_total.append(fileobject)
 
         files = self._fileobjects_total
@@ -143,7 +140,7 @@ class FileListing():
         "Returns FileObjects for all files in walk"
         files = []
         for item in self.walk():
-            fileobject = FileObject(os.path.join(self.site.directory, item), site=self.site)
+            fileobject = FileObject(os.path.join(DIRECTORY, item))
             files.append(fileobject)
         if self.sorting_by:
             files = self.sort_by_attr(files, self.sorting_by)

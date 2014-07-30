@@ -45,6 +45,6 @@ def pagination(context):
     return {
         'page_range': page_range,
         'page_num': page_num,
-        'results_var': context['results_var'],
+        'filelisting': context['filelisting'],
         'query': context['query'],
     }
