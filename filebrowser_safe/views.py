@@ -30,7 +30,7 @@ from filebrowser_safe.settings import *
 from filebrowser_safe.functions import (get_path, get_breadcrumbs,
     get_filterdate, get_settings_var, get_directory, convert_filename)
 from filebrowser_safe.templatetags.fb_tags import query_helper
-from filebrowser_safe.base import FileObject
+from filebrowser_safe.base import FileObject, FileListing
 from filebrowser_safe.decorators import flash_login_required
 
 from mezzanine.utils.importing import import_dotted_path
@@ -98,60 +98,56 @@ def browse(request):
     abs_path = os.path.join(get_directory(), path)
 
     # INITIAL VARIABLES
-    results_var = {'results_total': 0, 'results_current': 0, 'delete_total': 0, 'images_total': 0, 'select_total': 0}
+    #results_var = {'results_total': 0, 'results_current': 0, 'delete_total': 0, 'images_total': 0, 'select_total': 0}
     counter = {}
     for k, v in EXTENSIONS.items():
         counter[k] = 0
 
-    dir_list, file_list = default_storage.listdir(abs_path)
-    files = []
-    for file in dir_list + file_list:
-
-        # EXCLUDE FILES MATCHING VERSIONS_PREFIX OR ANY OF THE EXCLUDE PATTERNS
-        filtered = not file or file.startswith('.')
+    def filter_browse(item):
+        "Defining a browse filter"
+        filtered = item.filename.startswith('.')
         for re_prefix in filter_re:
-            if re_prefix.search(file):
+            if re_prefix.search(item.filename):
                 filtered = True
         if filtered:
-            continue
-        results_var['results_total'] += 1
+            return False
+        return True
 
-        # CREATE FILEOBJECT
-        url_path = "/".join([s.strip("/") for s in
-                            [get_directory(), path, file] if s.strip("/")])
-        fileobject = FileObject(url_path)
+    filelisting = FileListing(
+        path,
+        filter_func=filter_browse,
+        sorting_by=query.get('o', DEFAULT_SORTING_BY),
+        sorting_order=query.get('ot', DEFAULT_SORTING_ORDER),
+        site=self)
 
-        # FILTER / SEARCH
+    files = []
+    if SEARCH_TRAVERSE and query.get("q"):
+        listing = filelisting.files_walk_filtered()
+    else:
+        listing = filelisting.files_listing_filtered()
+
+    # If we do a search, precompile the search pattern now
+    do_search = query.get("q")
+    if do_search:
+        re_q = re.compile(query.get("q").lower(), re.M)
+
+    filter_type = query.get('filter_type')
+    filter_date = query.get('filter_date')
+
+    for fileobject in listing:
+        # date/type filter
         append = False
-        if fileobject.filetype == request.GET.get('filter_type', fileobject.filetype) and get_filterdate(request.GET.get('filter_date', ''), fileobject.date):
+        if (not filter_type or fileobject.filetype == filter_type) and (not filter_date or get_filterdate(filter_date, fileobject.date or 0)):
             append = True
-        if request.GET.get('q') and not re.compile(request.GET.get('q').lower(), re.M).search(file.lower()):
+        # search
+        if do_search and not re_q.search(fileobject.filename.lower()):
             append = False
-
-        # APPEND FILE_LIST
+        # append
         if append:
-            try:
-                # COUNTER/RESULTS
-                if fileobject.filetype == 'Image':
-                    results_var['images_total'] += 1
-                if fileobject.filetype != 'Folder':
-                    results_var['delete_total'] += 1
-                elif fileobject.filetype == 'Folder' and fileobject.is_empty:
-                    results_var['delete_total'] += 1
-                if query.get('type') and query.get('type') in SELECT_FORMATS and fileobject.filetype in SELECT_FORMATS[query.get('type')]:
-                    results_var['select_total'] += 1
-                elif not query.get('type'):
-                    results_var['select_total'] += 1
-            except OSError:
-                # Ignore items that have problems
-                continue
-            else:
-                files.append(fileobject)
-                results_var['results_current'] += 1
+            files.append(fileobject)
 
-        # COUNTER/RESULTS
-        if fileobject.filetype:
-            counter[fileobject.filetype] += 1
+    filelisting.results_total = len(listing)
+    filelisting.results_current = len(files)
 
     # SORTING
     query['o'] = request.GET.get('o', DEFAULT_SORTING_BY)
@@ -174,7 +170,7 @@ def browse(request):
         'dir': path,
         'p': p,
         'page': page,
-        'results_var': results_var,
+        'filelisting': filelisting,
         'counter': counter,
         'query': query,
         'title': _(u'Media Library'),
