@@ -329,8 +329,9 @@ def _upload_file(request):
 
             # HANDLE UPLOAD
             uploadedfile = default_storage.save(file_path, filedata)
-            if default_storage.exists(file_path):
-                default_storage.move(smart_text(uploadedfile), smart_text(file_path), allow_overwrite=True)
+            if file_path != uploadedfile:
+                if default_storage.exists(file_path):
+                    default_storage.move(smart_text(uploadedfile), smart_text(file_path), allow_overwrite=True)
 
             # POST UPLOAD SIGNAL
             filebrowser_post_upload.send(sender=request, path=request.POST.get('folder'), file=FileObject(smart_text(file_path)))
