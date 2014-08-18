@@ -72,11 +72,6 @@ h1 {margin:-30px 0 15px 0;}
     {% if results_var.images_total %}
     <td class="fb_icon">
         {% ifequal file.filetype 'Image' %}
-
-        <!--
-        I feel like this line should work, but instead throws a 500 server error. Need to debug.
-        <a href="{{ file.url }}" target="_blank"><img src="{% thumbnail file.url 60 60 %}" title="{% trans 'View Image' %}" /></a>
-        -->
         <a href="{{ file.url }}" target="_blank"><img src="{{ MEDIA_URL }}{% thumbnail file.path 60 60 %}" title="{% trans 'View Image' %}" /></a>
         {% endifequal %}
     </td>

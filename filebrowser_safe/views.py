@@ -329,7 +329,8 @@ def _upload_file(request):
 
             # HANDLE UPLOAD
             uploadedfile = default_storage.save(file_path, filedata)
-            if file_path != uploadedfile:
+            if file_path.replace('\\', '/') != uploadedfile.replace('\\', '/'):
+                # *shakes tiny impotent fist at windows operating system*
                 if default_storage.exists(file_path):
                     default_storage.move(smart_text(uploadedfile), smart_text(file_path), allow_overwrite=True)
 
